@@ -24,6 +24,12 @@ BusyBeaver is not a general chat model in this integration. It receives compact 
 - `docs/hermesagent20-validation.md`  
   Notes on what HermesAgent-20 tested, why those scenarios matter, how BusyBeaver performed, and what the failures imply.
 
+- `scripts/install_windows_hermes.ps1`  
+  Installs the BusyBeaver policy skill and helper command into a Windows Hermes install.
+
+- `docs/windows-hermes-setup.md`  
+  Windows Hermes/Spark setup notes for running BusyBeaver as an auxiliary policy endpoint.
+
 ## Targeted HermesAgent-20 Validation
 
 BusyBeaver was tested on the HermesAgent-20 scenarios that match its intended role as a tiny tool-policy helper, not on the parts of Hermes that require full planning, browser reasoning, delegation, skill authoring, or long-form synthesis.
@@ -100,6 +106,25 @@ Run the full 20:
   -Model runs\eval_v10_fast_ckpt200 `
   -All
 ```
+
+## Install Into Windows Hermes
+
+For the normal Windows Hermes install, BusyBeaver is installed as a local skill plus a helper command. It is not configured as the main Hermes chat model.
+
+```powershell
+cd C:\Users\basbe\Desktop\AI_Research\BusyBeaver-Hermes-Adapter
+.\scripts\install_windows_hermes.ps1 -StartServer
+```
+
+Smoke test the installed helper:
+
+```powershell
+C:\Users\basbe\AppData\Local\hermes\bin\busybeaver-policy.ps1 `
+  -Goal "Tests failed in tests/test_math.py. Choose the next tool action." `
+  -Pretty
+```
+
+See [docs/windows-hermes-setup.md](docs/windows-hermes-setup.md).
 
 ## Model JSON Contract
 

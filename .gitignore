@@ -7,3 +7,4 @@ dist/
 *.log
 *.out
 *.err
+.run/
