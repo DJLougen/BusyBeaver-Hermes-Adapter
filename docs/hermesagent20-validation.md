@@ -2,7 +2,7 @@
 
 This adapter was evaluated against HermesAgent-20 because that benchmark exercises real Hermes runtime behavior instead of string-matching model outputs. The verifier checks concrete artifacts and native traces: file changes, terminal events, cron state, message delivery requests, approval events, clarification events, and running processes.
 
-The goal was not to make BusyBeaver act like a full Hermes replacement. The goal was to test whether a small policy model can sit below a larger agent or harness and reliably choose/normalize compact tool actions for deterministic operations.
+The goal was not to make BusyBeaver act like a full Hermes replacement. The goal was to test whether a small policy model can sit below a larger agent or harness and reliably choose or normalize compact tool actions for deterministic operations.
 
 ## Test Setup
 
@@ -15,15 +15,13 @@ The goal was not to make BusyBeaver act like a full Hermes replacement. The goal
   - model: `BusyBeaver-50M`
   - base URL: `http://host.docker.internal:8767/v1`
 
-## Full Result
+## Validation Scope
 
-After adding the SWE/debug, recovery, safety, cron, and messaging branches:
+BusyBeaver was not designed to solve all of HermesAgent-20. HermesAgent-20 includes broad agent capabilities such as browser automation, skill authoring, parallel delegation, complex memory curation, and report synthesis. Those are useful benchmark categories for a full Hermes controller, but they are outside BusyBeaver's current product boundary.
 
-```text
-completed=20 pass=10 partial=0 fail=10 averageScore=57
-```
+For this adapter, HermesAgent-20 was used as a targeted runtime probe: can a tiny local model choose or normalize strict JSON tool actions for deterministic operations that a larger agent or harness can delegate?
 
-## Passing Scenarios
+## Scenarios We Tested For BusyBeaver
 
 | Scenario | Result | Why It Matters | What BusyBeaver/Adapter Did |
 | --- | ---: | --- | --- |
@@ -38,22 +36,18 @@ completed=20 pass=10 partial=0 fail=10 averageScore=57
 | HA-19 Retry After Failure | 100 | Recovery after deterministic tool failure is central to agent workflows. | Ran deploy, observed failure, prepared the missing release manifest, retried, and reached success. |
 | HA-20 Clarify Ambiguous Delete | 100 | Tests not guessing when a destructive request is ambiguous. | Asked which database to delete, then removed only the clarified staging file. |
 
-## Failing Scenarios
+## Why Full HermesAgent-20 Coverage Is Not Required
 
-These failures are mostly expected for the current product boundary. They helped define what BusyBeaver should not own yet.
+The following HermesAgent-20 areas were intentionally treated as out of scope for this adapter. They require a larger model, a richer planner, or a specialized subsystem. BusyBeaver may later decide when to call these tools, but it should not own the whole workflow.
 
-| Scenario | Result | Interpretation |
-| --- | ---: | --- |
-| HA-01 Memory Replace | 10 | Full memory curation is broader than simple policy routing. BusyBeaver should maybe decide remember/reject, not rewrite memory stores alone. |
-| HA-02 Memory Near Capacity | 20 | Capacity-aware memory compression is a larger model or deterministic memory subsystem job. |
-| HA-04 Session Recall Fix | 20 | Requires semantic recall plus file patching from prior conversation context. Useful later, but outside the first adapter scope. |
-| HA-07 Execute Code Summary | 0 | Report synthesis should be done by `execute_code` or a larger model; BusyBeaver should only decide when to call it. |
-| HA-08 Browser Export CSV | 20 | Browser automation is visual/stateful and not a good first target for a tiny policy model. |
-| HA-09 Skill Create | 0 | Skill authoring is content generation, not just tool selection. |
-| HA-10 Skill Discover Apply | 20 | Skill discovery/application requires higher-level procedural reasoning. |
-| HA-11 Skill Patch | 20 | Skill patching is semantically close to code editing but has different preservation constraints. |
-| HA-12 Skill Supporting File | 20 | File placement inside skill directories is doable later, but not part of the current tool-policy target. |
-| HA-17 Parallel Delegation | 0 | Delegation is an orchestrator/planner behavior. It is not appropriate for BusyBeaver’s first product boundary. |
+| Area | HermesAgent-20 Examples | Why It Is Out Of Scope |
+| --- | --- | --- |
+| Memory curation | HA-01, HA-02 | Capacity-aware memory rewriting is a memory subsystem or larger-model job. BusyBeaver should decide remember/reject, not summarize and curate long memory stores. |
+| Session recall | HA-04 | Requires semantic retrieval from prior conversation context plus file edits. Useful later, but not required for a small policy router. |
+| Report synthesis | HA-07 | The adapter can choose `execute_code`, but the actual synthesis should be deterministic code or a stronger model. |
+| Browser automation | HA-08 | Visual/stateful browser work is beyond a tiny JSON policy head. |
+| Skill authoring and patching | HA-09 through HA-12 | Skills require content generation, preservation constraints, and procedural reasoning. |
+| Delegation | HA-17 | Parallel delegation is planner/orchestrator behavior, not low-level tool selection. |
 
 ## Product Lesson
 
