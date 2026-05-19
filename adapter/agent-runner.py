@@ -83,12 +83,12 @@ def _request_overrides(generation: Dict[str, Any]) -> Dict[str, Any]:
     return overrides
 
 
-def _is_busybeaver_model(model: Dict[str, Any]) -> bool:
+def _is_policy_adapter_model(model: Dict[str, Any]) -> bool:
     haystack = " ".join(
         str(model.get(key) or "")
         for key in ("id", "label", "provider", "providerModel", "exposedModel")
     ).lower()
-    return "busybeaver" in haystack
+    return any(marker in haystack for marker in ("busybeaver", "busybee", "busybee-cpu", "policy-adapter"))
 
 
 def _join_url(base_url: str, suffix: str) -> str:
@@ -233,22 +233,22 @@ def _build_policy_messages(prompt: str, workspace_dir: Path, observations: List[
         },
     }
     return [
-        {"role": "system", "content": "You are routing a compact software-debug state to BusyBeaver. Return one strict JSON tool action."},
+        {"role": "system", "content": "Route this compact software-debug state to one strict JSON tool action."},
         {"role": "user", "content": json.dumps({"goal": prompt, "state": state, "available_tools": _available_tools(toolsets)}, ensure_ascii=False)},
     ]
 
 
-def _call_busybeaver_policy(model: Dict[str, Any], prompt: str, workspace_dir: Path, observations: List[str], toolsets: List[str]) -> Dict[str, Any]:
+def _call_policy_backend(model: Dict[str, Any], prompt: str, workspace_dir: Path, observations: List[str], toolsets: List[str]) -> Dict[str, Any]:
     base_url = str(model.get("inferenceBaseUrl") or "").rstrip("/")
     if not base_url:
-        return {"tool": "escalate", "args": {"reason": "missing BusyBeaver inferenceBaseUrl"}}
+        return {"tool": "escalate", "args": {"reason": "missing policy inferenceBaseUrl"}}
     headers: Dict[str, str] = {}
     if model.get("authMode") == "bearer" and model.get("apiKey"):
         headers["authorization"] = f"Bearer {model.get('apiKey')}"
     completion = _post_json(
         _join_url(base_url, "chat/completions"),
         {
-            "model": str(model.get("exposedModel") or model.get("providerModel") or "BusyBeaver-50M"),
+            "model": str(model.get("exposedModel") or model.get("providerModel") or "busybee-cpu"),
             "messages": _build_policy_messages(prompt, workspace_dir, observations, toolsets),
             "temperature": 0,
         },
@@ -256,7 +256,7 @@ def _call_busybeaver_policy(model: Dict[str, Any], prompt: str, workspace_dir: P
     )
     content = completion.get("choices", [{}])[0].get("message", {}).get("content") or ""
     parsed = _extract_json_object(str(content))
-    return parsed or {"tool": "escalate", "args": {"reason": "BusyBeaver returned non-JSON", "raw": str(content)[:500]}}
+    return parsed or {"tool": "escalate", "args": {"reason": "policy backend returned non-JSON", "raw": str(content)[:500]}}
 
 
 def _safe_workspace_path(workspace_dir: Path, requested_path: str) -> Optional[Path]:
@@ -695,7 +695,7 @@ def main() -> int:
         inference_base_url = str(model.get("inferenceBaseUrl") or "")
         provider = _guess_provider(inference_base_url, str(model.get("provider") or ""))
 
-        if _is_busybeaver_model(model):
+        if _is_policy_adapter_model(model):
             workspace_dir = Path(os.environ["HERMES_WRITE_SAFE_ROOT"]).resolve()
             prompt = str(request.get("prompt") or "")
             toolsets = list(request.get("toolsets") or [])
@@ -720,7 +720,7 @@ def main() -> int:
                 })
 
             def _policy_step() -> Dict[str, Any]:
-                action = _call_busybeaver_policy(model, prompt, workspace_dir, observations, toolsets)
+                action = _call_policy_backend(model, prompt, workspace_dir, observations, toolsets)
                 messages.append({"role": "assistant", "content": json.dumps(action, ensure_ascii=False)})
                 return action
 

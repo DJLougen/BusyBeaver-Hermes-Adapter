@@ -18,6 +18,9 @@ BusyBeaver is not a general chat model in this integration. It receives compact 
 - `scripts/run_local_eval.ps1`  
   Starts the BusyBeaver server and runs selected HermesAgent-20 scenarios.
 
+- `scripts/run_policy_benchmark.ps1`  
+  Runs the same HermesAgent-20 policy scenarios against BusyBeaver and the CPU-only `busyBee-cpu` backend.
+
 - `docs/busybeaver-adapter.md`  
   Integration contract, covered workflows, validation results, and limitations.
 
@@ -106,6 +109,27 @@ Run the full 20:
   -All
 ```
 
+## Benchmark BusyBeaver vs busyBee-cpu
+
+Use this when comparing the original model-backed endpoint with the CPU-only
+classifier endpoint:
+
+```powershell
+cd C:\Users\basbe\Desktop\AI_Research\BusyBeaver-Hermes-Adapter
+.\scripts\run_policy_benchmark.ps1 `
+  -BusyBeaverRepo C:\Users\basbe\Desktop\AI_Research\busybeaver `
+  -BusyBeeCpuRepo C:\Users\basbe\Desktop\AI_Research\busyBee-cpu `
+  -HermesRepo C:\Users\basbe\Desktop\AI_Research\HermesAgent-20
+```
+
+The script installs the current adapter runner into `HermesAgent-20`, trains or
+loads `busyBee-cpu\runs\hermes_policy.joblib`, starts each backend on its own
+port, runs the same scenario set, and writes logs plus `summary.json` under
+`.run\policy-benchmark`.
+
+HermesAgent-20 requires Docker Desktop with the Linux engine running. If Docker
+is down, the script records `blockedBy: "docker"` in the benchmark summary.
+
 ## Install Into Windows Hermes
 
 For the normal Windows Hermes install, BusyBeaver is installed as a local skill plus a helper command. It is not configured as the main Hermes chat model.
@@ -138,7 +162,7 @@ BusyBeaver must emit exactly one JSON object:
 }
 ```
 
-The adapter detects BusyBeaver when model metadata contains `busybeaver` in `id`, `label`, `provider`, `providerModel`, or `exposedModel`.
+The adapter policy path is enabled when model metadata contains `busybeaver`, `busybee`, `busybee-cpu`, or `policy-adapter` in `id`, `label`, `provider`, `providerModel`, or `exposedModel`.
 
 ## V12 Resolved Eval
 
