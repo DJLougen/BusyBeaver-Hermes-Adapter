@@ -104,7 +104,7 @@ BusyBeaver returns exactly one JSON object:
 
 Hermes should treat the output as advisory policy. Validate the selected tool against the active Hermes tool registry before any side effect. Keep shell actions dry-run or sandboxed unless the user explicitly approves.
 
-The local endpoint repairs common placeholder values such as `<PATH_FROM_STATE>` from `state.policy_features.candidate_paths` before returning the action.
+The production endpoint uses BusyBeaver's harness argument resolver after model generation. The model selects the tool; the resolver grounds exact file paths, commands, message fields, cron fields, and memory values from `state.recent_observations` and `state.policy_features` before returning the action.
 
 ## Intended Boundary
 

@@ -53,7 +53,7 @@ BusyBeaver must return exactly one JSON object:
 }
 ```
 
-The adapter validates and normalizes the response before executing any side effect. Unsafe or incomplete actions are constrained by deterministic adapter branches and workspace path checks.
+The adapter validates and normalizes the response before executing any side effect. In the V12 production path, the model chooses the tool and the BusyBeaver harness resolver grounds exact arguments from state, especially paths, commands, message targets, cron fields, and memory values. Unsafe or incomplete actions are constrained by deterministic adapter branches and workspace path checks.
 
 ## Detection
 
@@ -90,7 +90,7 @@ Start BusyBeaver as an OpenAI-compatible local endpoint:
 
 ```powershell
 cd C:\Users\basbe\Desktop\AI_Research\busybeaver
-python scripts\busybeaver_openai_server.py --model runs\eval_v10_fast_ckpt200 --host 0.0.0.0 --port 8767 --device cpu
+python scripts\busybeaver_openai_server.py --model GestaltLabs/BusyBeaver-50M --host 0.0.0.0 --port 8767 --device cpu
 ```
 
 Run the adapter-focused scenarios:
@@ -108,7 +108,7 @@ npm run dev:run -- --all --provider busybeaver --model BusyBeaver-50M --provider
 
 ## Targeted Validation
 
-Using the local `runs\eval_v10_fast_ckpt200` checkpoint:
+The original adapter probe used the local V10 checkpoint. The current promoted model is `GestaltLabs/BusyBeaver-50M`, V12 checkpoint 250.
 
 | Scenario | Result | Why It Was Tested |
 | --- | ---: | --- |
@@ -123,11 +123,22 @@ Using the local `runs\eval_v10_fast_ckpt200` checkpoint:
 | HA-19 | 100 | Failed-command recovery and retry. |
 | HA-20 | 100 | Clarification before ambiguous destructive action. |
 
+## V12 Resolved Evaluation
+
+With the BusyBeaver harness resolver enabled:
+
+| Eval | JSON | Schema | Correct Tool | Arg Semantic | Unsafe Cmd |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `frozen_path_grounding_v2` | 1.0000 | 1.0000 | 1.0000 | 0.9792 | 0.0000 |
+| `frozen_harness_v1` | 1.0000 | 1.0000 | 1.0000 | 0.9000 | 0.0000 |
+
+Without resolver grounding, the tiny model still chooses tools well but can collapse arbitrary paths or messages to frequent training strings. The resolver is therefore part of the production contract.
+
 ## Limitations
 
 BusyBeaver is used here as a compact policy helper. It should not be treated as a replacement for Hermes planning or a larger code model. The adapter still owns safety gates, schema normalization, deterministic verifier artifacts, and fallback repair behavior.
 
-The next useful model-side improvement is to train more canonical BusyBeaver examples for:
+The next useful model-side improvement is to reduce reliance on resolver grounding for:
 
 - valid concrete file paths instead of placeholders
 - cron action JSON

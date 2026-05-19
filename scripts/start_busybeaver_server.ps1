@@ -1,6 +1,6 @@
 param(
   [string]$BusyBeaverRepo = "C:\Users\basbe\Desktop\AI_Research\busybeaver",
-  [string]$Model = "C:\Users\basbe\Desktop\AI_Research\busybeaver\runs\eval_v10_fast_ckpt200",
+  [string]$Model = "GestaltLabs/BusyBeaver-50M",
   [string]$HostName = "127.0.0.1",
   [int]$Port = 8767,
   [string]$Device = "cpu",

@@ -2,7 +2,7 @@
 
 Standalone adapter package for running BusyBeaver as a small local tool-policy model inside the HermesAgent-20 verifier.
 
-BusyBeaver is not a general chat model in this integration. It receives compact agent state, available tools, recent observations, and a task goal, then emits one strict JSON tool action. The adapter maps that JSON action into Hermes-style tool events and deterministic verifier artifacts.
+BusyBeaver is not a general chat model in this integration. It receives compact agent state, available tools, recent observations, and a task goal, then emits one strict JSON tool action. The production path is model-selected tool plus deterministic harness argument grounding, so exact paths/commands/messages are copied from state before execution.
 
 ## What Is Included
 
@@ -34,7 +34,7 @@ BusyBeaver is not a general chat model in this integration. It receives compact 
 
 BusyBeaver was tested on the HermesAgent-20 scenarios that match its intended role as a tiny tool-policy helper, not on the parts of Hermes that require full planning, browser reasoning, delegation, skill authoring, or long-form synthesis.
 
-Validated passing scenarios with local `runs\eval_v10_fast_ckpt200`:
+Validated passing scenarios were originally run with the local V10 checkpoint. The current default model is `GestaltLabs/BusyBeaver-50M`, promoted from the V12 path-grounding RunPod run.
 
 | Scenario | Why It Was Tested |
 | --- | --- |
@@ -62,8 +62,7 @@ Detailed benchmark interpretation is in [docs/hermesagent20-validation.md](docs/
 - Local checkouts:
   - BusyBeaver repo with `scripts\busybeaver_openai_server.py`
   - HermesAgent-20 repo
-- A BusyBeaver checkpoint, for example:
-  - `runs\eval_v10_fast_ckpt200`
+- A BusyBeaver checkpoint or Hub model id:
   - `GestaltLabs/BusyBeaver-50M`
 
 ## Install Into HermesAgent-20
@@ -88,7 +87,7 @@ cd C:\Users\basbe\Desktop\AI_Research\BusyBeaver-Hermes-Adapter
 .\scripts\run_local_eval.ps1 `
   -BusyBeaverRepo C:\Users\basbe\Desktop\AI_Research\busybeaver `
   -HermesRepo C:\Users\basbe\Desktop\AI_Research\HermesAgent-20 `
-  -Model runs\eval_v10_fast_ckpt200
+  -Model GestaltLabs/BusyBeaver-50M
 ```
 
 By default this runs the adapter-focused scenarios:
@@ -103,7 +102,7 @@ Run the full 20:
 .\scripts\run_local_eval.ps1 `
   -BusyBeaverRepo C:\Users\basbe\Desktop\AI_Research\busybeaver `
   -HermesRepo C:\Users\basbe\Desktop\AI_Research\HermesAgent-20 `
-  -Model runs\eval_v10_fast_ckpt200 `
+  -Model GestaltLabs/BusyBeaver-50M `
   -All
 ```
 
@@ -140,6 +139,15 @@ BusyBeaver must emit exactly one JSON object:
 ```
 
 The adapter detects BusyBeaver when model metadata contains `busybeaver` in `id`, `label`, `provider`, `providerModel`, or `exposedModel`.
+
+## V12 Resolved Eval
+
+The current production contract depends on the BusyBeaver harness resolver in the BusyBeaver source checkout. With that resolver enabled, V12 checkpoint 250 scores:
+
+| Eval | JSON | Schema | Correct Tool | Arg Semantic | Unsafe Cmd |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `frozen_path_grounding_v2` | 1.0000 | 1.0000 | 1.0000 | 0.9792 | 0.0000 |
+| `frozen_harness_v1` | 1.0000 | 1.0000 | 1.0000 | 0.9000 | 0.0000 |
 
 ## License
 
